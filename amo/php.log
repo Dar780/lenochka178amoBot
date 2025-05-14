@@ -1,0 +1,1 @@
+[18-Mar-2025 12:47:59 Europe/Moscow] PHP Warning:  Cannot modify header information - headers already sent by (output started at /var/www/html/amo/rc.class.php:81) in /var/www/html/amo/handler.php on line 194

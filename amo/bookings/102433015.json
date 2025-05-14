@@ -1,0 +1,224 @@
+{
+    "id": 102433015,
+    "begin_date": "2025-03-10",
+    "end_date": "2025-03-14",
+    "status": "booked",
+    "apartment_id": 258337,
+    "realty_room_id": null,
+    "is_delete": false,
+    "updated_at": "2025-03-19T08:54:35.773+03:00",
+    "audits": [
+        {
+            "record": {
+                "title": "Создание Брони (102433015)"
+            },
+            "remote_address": "85.192.172.221",
+            "version": 1,
+            "created_at": "2025-03-19 08:54:17 MSK",
+            "is_auto": false,
+            "auto_text": "Автоматически",
+            "user": {
+                "id": 122304,
+                "full_name": "Радик",
+                "email": "khusainova-24@bk.ru"
+            },
+            "changes": [
+                [
+                    "Заезд",
+                    [
+                        "",
+                        "2025-03-10"
+                    ]
+                ],
+                [
+                    "Выезд",
+                    [
+                        "",
+                        "2025-03-14"
+                    ]
+                ],
+                [
+                    "Лот",
+                    [
+                        "",
+                        258337
+                    ]
+                ],
+                [
+                    "Статус",
+                    [
+                        "",
+                        "Бронь"
+                    ]
+                ],
+                [
+                    "Источник",
+                    [
+                        "",
+                        "manual"
+                    ]
+                ],
+                [
+                    "Оплата",
+                    [
+                        "",
+                        0
+                    ]
+                ]
+            ]
+        },
+        {
+            "record": {
+                "title": "Создание Платежа (21562801)"
+            },
+            "remote_address": "85.192.172.221",
+            "version": 2,
+            "created_at": "2025-03-19 08:54:28 MSK",
+            "is_auto": false,
+            "auto_text": "Автоматически",
+            "user": {
+                "id": 122304,
+                "full_name": "Радик",
+                "email": "khusainova-24@bk.ru"
+            },
+            "changes": [
+                [
+                    "Сумма",
+                    [
+                        "",
+                        1000
+                    ]
+                ],
+                [
+                    "Дата оплаты",
+                    [
+                        "",
+                        "2025-03-19 08:54:28 +0300"
+                    ]
+                ],
+                [
+                    "Счет",
+                    [
+                        "",
+                        "Наличные"
+                    ]
+                ],
+                [
+                    "Пользователь",
+                    [
+                        "",
+                        "Радик (khusainova-24@bk.ru)"
+                    ]
+                ],
+                [
+                    "Тип платежа",
+                    [
+                        "",
+                        "Оплата"
+                    ]
+                ]
+            ]
+        },
+        {
+            "record": {
+                "title": "Создание Гостя (33076340)"
+            },
+            "remote_address": "85.192.172.221",
+            "version": 3,
+            "created_at": "2025-03-19 08:54:35 MSK",
+            "is_auto": false,
+            "auto_text": "Автоматически",
+            "user": {
+                "id": 122304,
+                "full_name": "Радик",
+                "email": "khusainova-24@bk.ru"
+            },
+            "changes": [
+                [
+                    "ФИО",
+                    [
+                        "",
+                        "Дарья"
+                    ]
+                ],
+                [
+                    "Телефон",
+                    [
+                        "",
+                        "79627026644"
+                    ]
+                ]
+            ]
+        },
+        {
+            "record": {
+                "title": "Обновление Брони (102433015)"
+            },
+            "remote_address": "85.192.172.221",
+            "version": 4,
+            "created_at": "2025-03-19 08:54:35 MSK",
+            "is_auto": false,
+            "auto_text": "Автоматически",
+            "user": {
+                "id": 122304,
+                "full_name": "Радик",
+                "email": "khusainova-24@bk.ru"
+            },
+            "changes": [
+                [
+                    "Сумма",
+                    [
+                        null,
+                        8000
+                    ]
+                ],
+                [
+                    "Источник бронирования",
+                    [
+                        null,
+                        "Ostrovok.ru"
+                    ]
+                ],
+                [
+                    "Гость",
+                    [
+                        null,
+                        "Дарья"
+                    ]
+                ]
+            ]
+        }
+    ],
+    "platform_tax": null,
+    "realty_room_title": null,
+    "prepaid_amount": 100,
+    "notes": null,
+    "preparing": false,
+    "is_external": false,
+    "color": null,
+    "reaction": null,
+    "arrival_time": null,
+    "departure_time": null,
+    "send_link_prepaid": false,
+    "send_confirm_email": false,
+    "attachments": [],
+    "default_prepayment_amount": 0,
+    "default_deposit_amount": 3000,
+    "amount": 8000,
+    "deposit_refund_available_amount": -1142,
+    "client": {
+        "id": 33076340,
+        "fio": "Дарья",
+        "phone": "+7 962 702-66-44",
+        "additional_phone": null,
+        "email": null
+    },
+    "source_id": 5,
+    "external": {
+        "fields": [],
+        "action_fields": null
+    },
+    "platform_name": null,
+    "lead_id": 33158633,
+    "is_moved_amo": 0
+}

@@ -1,0 +1,163 @@
+{
+    "id": 108872427,
+    "begin_date": "2025-05-22",
+    "end_date": "2025-05-26",
+    "status": "booked",
+    "apartment_id": 209505,
+    "realty_room_id": null,
+    "is_delete": false,
+    "updated_at": "2025-05-12T20:19:33.986+03:00",
+    "automessages_enabled": false,
+    "platform_tax": null,
+    "realty_room_title": null,
+    "prepaid_amount": 2775,
+    "notes": null,
+    "preparing": false,
+    "is_external": false,
+    "color": null,
+    "reaction": null,
+    "arrival_time": null,
+    "departure_time": null,
+    "send_link_prepaid": false,
+    "send_confirm_email": false,
+    "attachments": [],
+    "default_prepayment_amount": 2775,
+    "default_deposit_amount": 3000,
+    "amount": 11100,
+    "deposit_refund_available_amount": -1142,
+    "client": {
+        "id": 34576854,
+        "fio": "Дарья",
+        "phone": "+7 962 792-66-44",
+        "additional_phone": null,
+        "email": null
+    },
+    "source_id": null,
+    "external": null,
+    "platform_name": null,
+    "audits": [
+        {
+            "record": {
+                "title": "Создание Брони (108872427)"
+            },
+            "remote_address": "85.107.105.205",
+            "version": 1,
+            "created_at": "2025-05-12 20:19:15 MSK",
+            "is_auto": false,
+            "auto_text": "Автоматически",
+            "user": {
+                "id": 38349,
+                "full_name": "Лена Столярова",
+                "email": "lena.stoliarova@mail.ru"
+            },
+            "changes": [
+                [
+                    "Заезд",
+                    [
+                        "",
+                        "2025-05-22"
+                    ]
+                ],
+                [
+                    "Выезд",
+                    [
+                        "",
+                        "2025-05-26"
+                    ]
+                ],
+                [
+                    "Лот",
+                    [
+                        "",
+                        209505
+                    ]
+                ],
+                [
+                    "Статус",
+                    [
+                        "",
+                        "Бронь"
+                    ]
+                ],
+                [
+                    "Источник",
+                    [
+                        "",
+                        "manual"
+                    ]
+                ],
+                [
+                    "Оплата",
+                    [
+                        "",
+                        0
+                    ]
+                ]
+            ]
+        },
+        {
+            "record": {
+                "title": "Создание Гостя (34576854)"
+            },
+            "remote_address": "85.107.105.205",
+            "version": 2,
+            "created_at": "2025-05-12 20:19:34 MSK",
+            "is_auto": false,
+            "auto_text": "Автоматически",
+            "user": {
+                "id": 38349,
+                "full_name": "Лена Столярова",
+                "email": "lena.stoliarova@mail.ru"
+            },
+            "changes": [
+                [
+                    "ФИО",
+                    [
+                        "",
+                        "Дарья"
+                    ]
+                ],
+                [
+                    "Телефон",
+                    [
+                        "",
+                        "79627926644"
+                    ]
+                ]
+            ]
+        },
+        {
+            "record": {
+                "title": "Обновление Брони (108872427)"
+            },
+            "remote_address": "85.107.105.205",
+            "version": 3,
+            "created_at": "2025-05-12 20:19:34 MSK",
+            "is_auto": false,
+            "auto_text": "Автоматически",
+            "user": {
+                "id": 38349,
+                "full_name": "Лена Столярова",
+                "email": "lena.stoliarova@mail.ru"
+            },
+            "changes": [
+                [
+                    "Сумма",
+                    [
+                        null,
+                        11100
+                    ]
+                ],
+                [
+                    "Гость",
+                    [
+                        null,
+                        "Дарья"
+                    ]
+                ]
+            ]
+        }
+    ],
+    "lead_id": 36727993,
+    "is_moved_amo": 0
+}

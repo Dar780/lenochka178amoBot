@@ -1,0 +1,254 @@
+[2025-03-12 22:33:54] Request registered
+[2025-03-12 22:33:54] Входящие данные вебхука:
+Array
+(
+    [leads] => Array
+        (
+            [add] => Array
+                (
+                    [0] => Array
+                        (
+                            [id] => 33116341
+                            [status_id] => 74364970
+                            [pipeline_id] => 9266190
+                        )
+
+                )
+
+        )
+
+    [account] => Array
+        (
+            [id] => 32247010
+            [subdomain] => maratmost1
+        )
+
+)
+
+[2025-03-12 22:39:33] Request registered
+[2025-03-12 22:39:33] Входящие данные вебхука:
+Array
+(
+    [leads] => Array
+        (
+            [add] => Array
+                (
+                    [0] => Array
+                        (
+                            [id] => 33116341
+                            [status_id] => 74364970
+                            [pipeline_id] => 9266190
+                        )
+
+                )
+
+        )
+
+    [account] => Array
+        (
+            [id] => 32247010
+            [subdomain] => maratmost1
+        )
+
+)
+
+[2025-03-12 22:39:33] Отправлено сообщение в Telegram: Вызов менеджера в сделку https://maratmost1.amocrm.ru/leads/detail/33116341
+[2025-03-13 14:47:04] Request registered
+[2025-03-13 14:47:04] Входящие данные вебхука:
+Array
+(
+    [leads] => Array
+        (
+            [add] => Array
+                (
+                    [0] => Array
+                        (
+                            [id] => 33128823
+                            [status_id] => 74858758
+                            [pipeline_id] => 9266190
+                        )
+
+                )
+
+        )
+
+    [account] => Array
+        (
+            [id] => 32247010
+            [subdomain] => maratmost1
+        )
+
+)
+
+[2025-03-13 14:47:04] Отправлено сообщение в Telegram: Вызов менеджера в сделку https://maratmost1.amocrm.ru/leads/detail/33128823
+[2025-03-13 16:50:21] Request registered
+[2025-03-13 16:50:21] Входящие данные вебхука:
+Array
+(
+    [leads] => Array
+        (
+            [add] => Array
+                (
+                    [0] => Array
+                        (
+                            [id] => 33129587
+                            [status_id] => 74858758
+                            [pipeline_id] => 9266190
+                        )
+
+                )
+
+        )
+
+    [account] => Array
+        (
+            [id] => 32247010
+            [subdomain] => maratmost1
+        )
+
+)
+
+[2025-03-13 16:50:21] Отправлено сообщение в Telegram: Вызов менеджера в сделку https://maratmost1.amocrm.ru/leads/detail/33129587
+[2025-03-18 11:15:54] Request registered
+[2025-03-18 11:15:54] Входящие данные вебхука:
+Array
+(
+    [leads] => Array
+        (
+            [add] => Array
+                (
+                    [0] => Array
+                        (
+                            [id] => 33155901
+                            [status_id] => 74858758
+                            [pipeline_id] => 9266190
+                        )
+
+                )
+
+        )
+
+    [account] => Array
+        (
+            [id] => 32247010
+            [subdomain] => maratmost1
+        )
+
+)
+
+[2025-03-18 11:15:54] Отправлено сообщение в Telegram: Вызов менеджера в сделку https://maratmost1.amocrm.ru/leads/detail/33155901
+[2025-03-18 11:20:37] Request registered
+[2025-03-18 11:20:37] Входящие данные вебхука:
+Array
+(
+    [leads] => Array
+        (
+            [add] => Array
+                (
+                    [0] => Array
+                        (
+                            [id] => 33155901
+                            [status_id] => 74858758
+                            [pipeline_id] => 9266190
+                        )
+
+                )
+
+        )
+
+    [account] => Array
+        (
+            [id] => 32247010
+            [subdomain] => maratmost1
+        )
+
+)
+
+[2025-03-18 11:20:37] Отправлено сообщение в Telegram: Вызов менеджера в сделку https://maratmost1.amocrm.ru/leads/detail/33155901
+[2025-03-19 05:41:04] Request registered
+[2025-03-19 05:41:04] Входящие данные вебхука:
+Array
+(
+    [leads] => Array
+        (
+            [add] => Array
+                (
+                    [0] => Array
+                        (
+                            [id] => 33158589
+                            [status_id] => 74858758
+                            [pipeline_id] => 9266190
+                        )
+
+                )
+
+        )
+
+    [account] => Array
+        (
+            [id] => 32247010
+            [subdomain] => maratmost1
+        )
+
+)
+
+[2025-03-19 05:41:04] Отправлено сообщение в Telegram: Вызов менеджера в сделку https://maratmost1.amocrm.ru/leads/detail/33158589
+[2025-03-19 05:49:16] Request registered
+[2025-03-19 05:49:16] Входящие данные вебхука:
+Array
+(
+    [leads] => Array
+        (
+            [add] => Array
+                (
+                    [0] => Array
+                        (
+                            [id] => 33158617
+                            [status_id] => 74858758
+                            [pipeline_id] => 9266190
+                        )
+
+                )
+
+        )
+
+    [account] => Array
+        (
+            [id] => 32247010
+            [subdomain] => maratmost1
+        )
+
+)
+
+[2025-03-19 05:49:16] Отправлено сообщение в Telegram: Вызов менеджера в сделку https://maratmost1.amocrm.ru/leads/detail/33158617
+[2025-03-19 05:55:09] Request registered
+[2025-03-19 05:55:09] Входящие данные вебхука:
+Array
+(
+    [leads] => Array
+        (
+            [add] => Array
+                (
+                    [0] => Array
+                        (
+                            [id] => 33158633
+                            [status_id] => 74858758
+                            [pipeline_id] => 9266190
+                        )
+
+                )
+
+        )
+
+    [account] => Array
+        (
+            [id] => 32247010
+            [subdomain] => maratmost1
+        )
+
+)
+
+[2025-03-19 05:55:09] Отправлено сообщение в Telegram: Вызов менеджера в сделку https://maratmost1.amocrm.ru/leads/detail/33158633
+[2025-04-21 08:33:18] Request registered
+[2025-05-12 15:49:50] Request registered
+[2025-05-13 07:09:46] Request registered
