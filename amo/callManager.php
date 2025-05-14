@@ -58,7 +58,7 @@ if (!$isCli) {
         ],
         'account' => [
             'id' => 32247010,
-            'subdomain' => 'maratmost1'
+            'subdomain' => 'lenasutochno178'
         ]
     ];
 }
