@@ -38,7 +38,6 @@ foreach ($files as $file) {
     if (
         isset($bookingData['end_date'], $bookingData['apartment_id'], $bookingData['lead_id']) &&
         $bookingData['end_date'] === $today &&
-        $bookingData['apartment_id'] == 209505 &&
         (!isset($bookingData['is_moved_amo']) || $bookingData['is_moved_amo'] == 0)
     ) {
         $leadsToMove[$bookingData['lead_id']] = 74365494; // ID нового этапа

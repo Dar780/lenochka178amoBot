@@ -93,11 +93,7 @@ foreach ($leadsArray as $leadStatus) {
         $bookingInfo['lead_id'] = $leadId;
         $bookingInfo['is_moved_amo'] = 0;
 
-        if (!isset($bookingInfo['apartment_id']) || $bookingInfo['apartment_id'] != 209505) {
-            file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] Бронь $bookingNumber пропущена (apartment_id != 209505).\n", FILE_APPEND);
-            continue;
-        }
-
+        // Удаляем проверку на apartment_id == 209505, чтобы обрабатывать все квартиры
         file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] Бронь $bookingNumber: Инфо:\n" . print_r($bookingInfo, true) . "\n", FILE_APPEND);
         
         // Сохраняем JSON с данными брони в папке bookings под именем {bookingId}.json
