@@ -1,0 +1,9 @@
+# Crontab configuration for AmoCRM automations
+# Run the check-in instructions script every day at 7:00 AM
+0 7 * * * php /path/to/lenochka178amoBot/amo/checkInstructions.php
+
+# To install this crontab, run:
+# crontab -l > current_crontab
+# cat crontab.txt >> current_crontab
+# crontab current_crontab
+# rm current_crontab 
