@@ -91,8 +91,28 @@ foreach ($leadsArray as $lead) {
         
         // Проверяем, является ли значение числовым (timestamp)
         if (is_numeric($checkInDate)) {
-            // Преобразуем timestamp в формат YYYY-MM-DD
-            $checkInDate = date('Y-m-d', $checkInDate);
+            // Используем дату из API AmoCRM напрямую
+            // Получаем информацию о брони из вашей системы
+            $bookingId = null;
+            if (preg_match('/Бронь #(\d+)/', $leadData['name'], $matches)) {
+                $bookingId = $matches[1];
+                file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] Сделка ID $leadId: Извлечён номер брони: $bookingId.\n", FILE_APPEND);
+                
+                // Если у вас есть API для получения данных брони
+                $bookingInfo = getBookingInfo($bookingId); // Предполагается, что эта функция существует
+                if ($bookingInfo && isset($bookingInfo['begin_date'])) {
+                    $checkInDate = $bookingInfo['begin_date'];
+                    file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] Использую дату заезда из API брони: $checkInDate\n", FILE_APPEND);
+                } else {
+                    // Если не удалось получить данные из API, используем timestamp с учетом часового пояса
+                    // Установим часовой пояс на MSK (UTC+3)
+                    $checkInDate = gmdate('Y-m-d', $checkInDate + 3*3600); // +3 часа для MSK
+                    file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] Использую преобразованный timestamp с учетом часового пояса: $checkInDate\n", FILE_APPEND);
+                }
+            } else {
+                // Если не удалось извлечь ID брони, используем timestamp с учетом часового пояса
+                $checkInDate = gmdate('Y-m-d', $checkInDate + 3*3600); // +3 часа для MSK
+            }
         } elseif (strpos($checkInDate, ' ') !== false) {
             // Если дата содержит пробел (формат с временем), извлекаем только дату
             $checkInDate = explode(' ', $checkInDate)[0];
