@@ -86,11 +86,15 @@ foreach ($leadsArray as $lead) {
             continue;
         }
         
+        // Получаем значение даты
         $checkInDate = $checkInDateValues[0];
         
-        // Format date if needed (assuming date is in YYYY-MM-DD format)
-        if (strpos($checkInDate, ' ') !== false) {
-            // If date has time component, extract just the date part
+        // Проверяем, является ли значение числовым (timestamp)
+        if (is_numeric($checkInDate)) {
+            // Преобразуем timestamp в формат YYYY-MM-DD
+            $checkInDate = date('Y-m-d', $checkInDate);
+        } elseif (strpos($checkInDate, ' ') !== false) {
+            // Если дата содержит пробел (формат с временем), извлекаем только дату
             $checkInDate = explode(' ', $checkInDate)[0];
         }
         
