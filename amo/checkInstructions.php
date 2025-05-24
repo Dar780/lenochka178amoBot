@@ -88,10 +88,18 @@ try {
         
         $checkInDate = $checkInDateValues[0];
         
-        // Format date if needed (assuming date is in YYYY-MM-DD format)
-        if (strpos($checkInDate, ' ') !== false) {
+        // Проверяем, является ли значение числовым (timestamp)
+        if (is_numeric($checkInDate)) {
+            // AmoCRM передает timestamp в UTC, но нам нужно перевести его в московское время
+            // Добавляем смещение для московской временной зоны (UTC+3)
+            $checkInDate = date('Y-m-d', $checkInDate + (3*3600)); // +3 часа в секундах
+        } elseif (strpos($checkInDate, ' ') !== false) {
+            // Если дата содержит пробел (формат с временем), извлекаем только дату
             $checkInDate = explode(' ', $checkInDate)[0];
         }
+        
+        // Добавляем отладочный вывод
+        file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] DEBUG: Timestamp: $checkInDateValues[0], После преобразования: $checkInDate, Tomorrow: $tomorrow\n", FILE_APPEND);
         
         file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] Lead $leadId check-in date: $checkInDate, Tomorrow: $tomorrow\n", FILE_APPEND);
         
