@@ -104,15 +104,18 @@ foreach ($leadsArray as $lead) {
         
         file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] DEBUG: Timestamp: $checkInDateValues[0], После преобразования: $checkInDate, Tomorrow: $tomorrow\n", FILE_APPEND);
         
-        // Check if the check-in date is tomorrow
-        if ($checkInDate === $tomorrow) {
+        // Получаем сегодняшнюю дату
+        $today = date('Y-m-d');
+        
+        // Check if the check-in date is today or tomorrow
+        if ($checkInDate === $tomorrow || $checkInDate === $today) {
             // Move to "Отправка инструкции" stage
             $leadsToMove[$leadId] = $SEND_INSTRUCTION_STAGE_ID;
-            file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] Lead $leadId has check-in tomorrow, moving to 'Отправка инструкции'\n", FILE_APPEND);
+            file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] Lead $leadId has check-in today or tomorrow, moving to 'Отправка инструкции'\n", FILE_APPEND);
         } else {
             // Move to "Нужна инструкция" stage
             $leadsToMove[$leadId] = $NEED_INSTRUCTION_STAGE_ID;
-            file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] Lead $leadId does not have check-in tomorrow, moving to 'Нужна инструкция'\n", FILE_APPEND);
+            file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] Lead $leadId check-in date is neither today nor tomorrow, moving to 'Нужна инструкция'\n", FILE_APPEND);
         }
     } catch (Exception $e) {
         file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] Error processing lead $leadId: " . $e->getMessage() . "\n", FILE_APPEND);
