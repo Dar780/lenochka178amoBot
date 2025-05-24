@@ -34,13 +34,32 @@ foreach ($files as $file) {
     if (!$bookingData) {
         continue;
     }
-    // Используем end_date вместо begin_date
+    
+    // Проверяем наличие необходимых полей
+    if (!isset($bookingData['end_date'], $bookingData['apartment_id'], $bookingData['lead_id'])) {
+        continue;
+    }
+    
+    // Получаем дату выезда и обрабатываем возможные форматы
+    $endDate = $bookingData['end_date'];
+    
+    // Обрабатываем дату с учетом возможного формата timestamp
+    if (is_numeric($endDate)) {
+        // AmoCRM передает timestamp в UTC, добавляем смещение для московской временной зоны
+        $endDate = date('Y-m-d', $endDate + (3*3600)); // +3 часа в секундах
+    } elseif (strpos($endDate, ' ') !== false) {
+        // Если дата содержит пробел (формат с временем), извлекаем только дату
+        $endDate = explode(' ', $endDate)[0];
+    }
+    
+    file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] DEBUG: Бронь ID " . $bookingData['id'] . ", дата выезда: " . $bookingData['end_date'] . ", после обработки: $endDate, сравнивается с today=$today\n", FILE_APPEND);
+    
+    // Проверяем, совпадает ли дата выезда с сегодняшней
     if (
-        isset($bookingData['end_date'], $bookingData['apartment_id'], $bookingData['lead_id']) &&
-        $bookingData['end_date'] === $today &&
+        $endDate === $today &&
         (!isset($bookingData['is_moved_amo']) || $bookingData['is_moved_amo'] == 0)
     ) {
-        $leadsToMove[$bookingData['lead_id']] = 74365494; // ID нового этапа
+        $leadsToMove[$bookingData['lead_id']] = 74365494; // ID нового этапа - "Выселение"
         file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] Для брони ID " . $bookingData['id'] . " найдено совпадение. Lead ID: " . $bookingData['lead_id'] . "\n", FILE_APPEND);
     }
 }
