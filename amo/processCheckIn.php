@@ -39,7 +39,7 @@ $amoCRM = new AmoCRM($subdomain);
 $amoCRM->setToken($token);
 
 // Define status stage IDs
-$NEED_INSTRUCTION_STAGE_ID = 76985442;       // "Нужна инструкция" stage ID
+$NEED_INSTRUCTION_STAGE_ID = 76985442;       // "Отложенная инструкция" stage ID
 $SEND_INSTRUCTION_STAGE_ID = 74364966;       // "Отправка инструкции" stage ID
 $PIPELINE_ID = 9266190;                       // RealtyCalendar pipeline ID
 $CHECK_IN_DATE_FIELD_ID = 833655;            // check-in date field ID
@@ -113,9 +113,9 @@ foreach ($leadsArray as $lead) {
             $leadsToMove[$leadId] = $SEND_INSTRUCTION_STAGE_ID;
             file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] Lead $leadId has check-in today or tomorrow, moving to 'Отправка инструкции'\n", FILE_APPEND);
         } else {
-            // Move to "Нужна инструкция" stage
+            // Move to "Отложенная инструкция" stage
             $leadsToMove[$leadId] = $NEED_INSTRUCTION_STAGE_ID;
-            file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] Lead $leadId check-in date is neither today nor tomorrow, moving to 'Нужна инструкция'\n", FILE_APPEND);
+            file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] Lead $leadId check-in date is neither today nor tomorrow, moving to 'Отложенная инструкция'\n", FILE_APPEND);
         }
     } catch (Exception $e) {
         file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] Error processing lead $leadId: " . $e->getMessage() . "\n", FILE_APPEND);
