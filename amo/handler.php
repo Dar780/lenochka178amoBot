@@ -185,6 +185,9 @@ foreach ($leadsArray as $leadStatus) {
                 $updateFields[] = ['field_id' => 852857, 'values' => [['value' => $apartmentData['recipient']]]];
                 $updateFields[] = ['field_id' => 873617, 'values' => [['value' => $apartmentData['wifi_name']]]];
                 $updateFields[] = ['field_id' => 873619, 'values' => [['value' => $apartmentData['wifi_password']]]];
+                $updateFields[] = ['field_id' => 873621, 'values' => [['value' => $apartmentData['keybox_code']]]];
+                $updateFields[] = ['field_id' => 873623, 'values' => [['value' => $apartmentData['entrance_number']]]]; // Номер подъезда
+                $updateFields[] = ['field_id' => 873625, 'values' => [['value' => $apartmentData['floor_number']]]]; // Номер этажа
             }
             $stmt->close();
         } else {

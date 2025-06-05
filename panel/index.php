@@ -34,6 +34,9 @@ $result = $db->query("SELECT * FROM apartments");
                     <th>Залог</th>
                     <th>Уборка</th>
                     <th>Банк</th>
+                    <th>Кейбокс</th>
+                    <th>Подъезд</th>
+                    <th>Этаж</th>
                     <th>Действия</th>
                 </tr>
             </thead>
@@ -52,6 +55,9 @@ $result = $db->query("SELECT * FROM apartments");
                         <td><?= htmlspecialchars($row['deposit_amount']) ?> руб.</td>
                         <td><?= htmlspecialchars($row['cleaning_fee']) ?> руб.</td>
                         <td><?= htmlspecialchars($row['bank']) ?> (<?= htmlspecialchars($row['recipient']) ?>)</td>
+                        <td><?= htmlspecialchars($row['keybox_code']) ?></td>
+                        <td><?= htmlspecialchars($row['entrance_number']) ?></td>
+                        <td><?= htmlspecialchars($row['floor_number']) ?></td>
                         <td>
                             <a href="edit.php?id=<?= $row['id'] ?>" class="btn btn-primary btn-sm">✏️</a>
                             <button onclick="confirmDelete(<?= $row['id'] ?>)" class="btn btn-danger btn-sm">🗑️</button>

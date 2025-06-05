@@ -17,14 +17,17 @@ if (!$apartment) {
 }
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
-    $stmt = $db->prepare("UPDATE apartments SET realty_id=?, street=?, house_number=?, apartment_number=?, gate_code=?, intercom_code=?, deposit_amount=?, cleaning_fee=?, bank=?, recipient=?, wifi_name=?, wifi_password=? WHERE id=?");
-    $stmt->bind_param("ssssssssssssi", 
+    $stmt = $db->prepare("UPDATE apartments SET realty_id=?, street=?, house_number=?, apartment_number=?, gate_code=?, intercom_code=?, keybox_code=?, entrance_number=?, floor_number=?, deposit_amount=?, cleaning_fee=?, bank=?, recipient=?, wifi_name=?, wifi_password=? WHERE id=?");
+    $stmt->bind_param("sssssssssssssssi", 
         $_POST['realty_id'], 
         $_POST['street'], 
         $_POST['house_number'], 
         $_POST['apartment_number'], 
         $_POST['gate_code'], 
         $_POST['intercom_code'], 
+        $_POST['keybox_code'],
+        $_POST['entrance_number'],
+        $_POST['floor_number'],
         $_POST['deposit_amount'], 
         $_POST['cleaning_fee'], 
         $_POST['bank'], 
@@ -71,6 +74,18 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         <div class="mb-3">
             <label class="form-label">Код домофона</label>
             <input type="text" name="intercom_code" class="form-control" value="<?= htmlspecialchars($apartment['intercom_code']) ?>" required>
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Кейбокс</label>
+            <input type="text" name="keybox_code" class="form-control" value="<?= htmlspecialchars($apartment['keybox_code']) ?>">
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Подъезд</label>
+            <input type="text" name="entrance_number" class="form-control" value="<?= htmlspecialchars($apartment['entrance_number']) ?>">
+        </div>
+        <div class="mb-3">
+            <label class="form-label">Этаж</label>
+            <input type="text" name="floor_number" class="form-control" value="<?= htmlspecialchars($apartment['floor_number']) ?>">
         </div>
         <div class="mb-3">
             <label class="form-label">Залог (руб.)</label>
