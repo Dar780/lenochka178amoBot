@@ -9,7 +9,21 @@ ini_set('display_errors', 1);
 $logFile = __DIR__ . '/handler_log.txt';
 $isCli = php_sapi_name() === 'cli';
 
-file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] Request registered\n", FILE_APPEND);
+// Функция для безопасной записи в лог
+function safeLog($logFile, $message) {
+    if (is_writable(dirname($logFile))) {
+        @file_put_contents($logFile, $message, FILE_APPEND);
+    } else {
+        error_log(strip_tags($message));
+    }
+}
+
+// Проверяем возможность записи в лог
+if (!is_writable(dirname($logFile))) {
+    error_log("[" . date('Y-m-d H:i:s') . "] Cannot write to log directory: " . dirname($logFile));
+} else {
+    @file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] Request registered\n", FILE_APPEND);
+}
 
 // Получаем данные вебхука
 if (!$isCli) {
@@ -49,7 +63,7 @@ if (!$isCli) {
 }
 
 // Логируем входящие данные вебхука
-file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] Входящие данные вебхука:\n" . print_r($postData, true) . "\n", FILE_APPEND);
+safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] Входящие данные вебхука:\n" . print_r($postData, true) . "\n");
 
 // Захардкоженный subdomain для amoCRM
 $subdomain = 'lenasutochno178';
@@ -69,10 +83,10 @@ foreach ($leadsArray as $leadStatus) {
     
     // Получаем данные сделки из amoCRM
     $leadData = $amoCRM->getLeadById($leadId);
-    file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] Данные сделки для ID $leadId:\n" . print_r($leadData, true) . "\n", FILE_APPEND);
+    safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] Данные сделки для ID $leadId:\n" . print_r($leadData, true) . "\n");
     
     if (!isset($leadData['name'])) {
-        file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] Сделке с ID $leadId не найдено поле name.\n", FILE_APPEND);
+        safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] Сделке с ID $leadId не найдено поле name.\n");
         continue;
     }
     
@@ -80,11 +94,11 @@ foreach ($leadsArray as $leadStatus) {
     
     // Если название сделки начинается с "Бронь", извлекаем номер брони
     if (!preg_match('/^Бронь\s+#?(\d+)/u', $leadName, $matches)) {
-        file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] Сделка ID $leadId не является бронью.\n", FILE_APPEND);
+        safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] Сделка ID $leadId не является бронью.\n");
         continue;
     }
     $bookingNumber = $matches[1];
-    file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] Сделка ID $leadId: Извлечён номер брони: $bookingNumber.\n", FILE_APPEND);
+    safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] Сделка ID $leadId: Извлечён номер брони: $bookingNumber.\n");
     
     // Получаем информацию по брони через RealtyCalendar
     try {
@@ -94,7 +108,7 @@ foreach ($leadsArray as $leadStatus) {
         $bookingInfo['is_moved_amo'] = 0;
 
         // Удаляем проверку на apartment_id == 209505, чтобы обрабатывать все квартиры
-        file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] Бронь $bookingNumber: Инфо:\n" . print_r($bookingInfo, true) . "\n", FILE_APPEND);
+        safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] Бронь $bookingNumber: Инфо:\n" . print_r($bookingInfo, true) . "\n");
         
         // Сохраняем JSON с данными брони в папке bookings под именем {bookingId}.json
         $bookingsDir = __DIR__ . '/bookings';
@@ -104,15 +118,15 @@ foreach ($leadsArray as $leadStatus) {
         $bookingFile = $bookingsDir . '/' . $bookingInfo['id'] . '.json';
         file_put_contents($bookingFile, json_encode($bookingInfo, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
     } catch (Exception $e) {
-        file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] Ошибка при получении инфо брони $bookingNumber: " . $e->getMessage() . "\n", FILE_APPEND);
+        safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] Ошибка при получении инфо брони $bookingNumber: " . $e->getMessage() . "\n");
         continue;
     }
     
     try {
         $paymentInfo = $rc->getPaymentInfo($bookingNumber);
-        file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] Бронь $bookingNumber: Платежи:\n" . print_r($paymentInfo, true) . "\n", FILE_APPEND);
+        safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] Бронь $bookingNumber: Платежи:\n" . print_r($paymentInfo, true) . "\n");
     } catch (Exception $e) {
-        file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] Ошибка при получении платежей для брони $bookingNumber: " . $e->getMessage() . "\n", FILE_APPEND);
+        safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] Ошибка при получении платежей для брони $bookingNumber: " . $e->getMessage() . "\n");
         continue;
     }
     
@@ -126,15 +140,15 @@ foreach ($leadsArray as $leadStatus) {
             }
         }
     }
-    file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] Сделка ID $leadId: Внесенная оплата: $paymentAmount.\n", FILE_APPEND);
+    safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] Сделка ID $leadId: Внесенная оплата: $paymentAmount.\n");
     
     // Из общей информации получаем общую сумму брони
     if (!isset($bookingInfo['amount'])) {
-        file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] Нет данных о сумме для брони $bookingNumber.\n", FILE_APPEND);
+        safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] Нет данных о сумме для брони $bookingNumber.\n");
         continue;
     }
     $totalAmount = $bookingInfo['amount'];
-    file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] Бронь $bookingNumber: Общая сумма (amount): $totalAmount.\n", FILE_APPEND);
+    safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] Бронь $bookingNumber: Общая сумма (amount): $totalAmount.\n");
     
     // Вычисляем остаток: если внесенная оплата есть, то остаток = totalAmount - paymentAmount, иначе остаток = totalAmount
     $remaining = ($paymentAmount > 0) ? ($totalAmount - $paymentAmount) : $totalAmount;
@@ -172,7 +186,7 @@ foreach ($leadsArray as $leadStatus) {
             $result = $stmt->get_result();
             if ($result && $result->num_rows > 0) {
                 $apartmentData = $result->fetch_assoc();
-                file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] Найдена квартира для realty_id $apartmentId:\n" . print_r($apartmentData, true) . "\n", FILE_APPEND);
+                safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] Найдена квартира для realty_id $apartmentId:\n" . print_r($apartmentData, true) . "\n");
                 
                 $updateFields[] = ['field_id' => 852841, 'values' => [['value' => $apartmentData['street']]]];
                 $updateFields[] = ['field_id' => 852843, 'values' => [['value' => $apartmentData['house_number']]]];
@@ -185,13 +199,19 @@ foreach ($leadsArray as $leadStatus) {
                 $updateFields[] = ['field_id' => 852857, 'values' => [['value' => $apartmentData['recipient']]]];
                 $updateFields[] = ['field_id' => 873617, 'values' => [['value' => $apartmentData['wifi_name']]]];
                 $updateFields[] = ['field_id' => 873619, 'values' => [['value' => $apartmentData['wifi_password']]]];
-                $updateFields[] = ['field_id' => 873621, 'values' => [['value' => $apartmentData['keybox_code']]]];
-                $updateFields[] = ['field_id' => 873623, 'values' => [['value' => $apartmentData['entrance_number']]]]; // Номер подъезда
-                $updateFields[] = ['field_id' => 873625, 'values' => [['value' => $apartmentData['floor_number']]]]; // Номер этажа
+                if (!empty($apartmentData['keybox_code'])) {
+                    $updateFields[] = ['field_id' => 873621, 'values' => [['value' => $apartmentData['keybox_code']]]];
+                }
+                if (!empty($apartmentData['entrance_number'])) {
+                    $updateFields[] = ['field_id' => 873623, 'values' => [['value' => $apartmentData['entrance_number']]]];
+                }
+                if (!empty($apartmentData['floor_number'])) {
+                    $updateFields[] = ['field_id' => 873625, 'values' => [['value' => $apartmentData['floor_number']]]];
+                }
             }
             $stmt->close();
         } else {
-            file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] Ошибка подготовки запроса: " . $db->error . "\n", FILE_APPEND);
+            safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] Ошибка подготовки запроса: " . $db->error . "\n");
         }
     }
     
@@ -200,10 +220,10 @@ foreach ($leadsArray as $leadStatus) {
         'custom_fields_values' => $updateFields
     ];
     
-    file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] Сделка ID $leadId: Данные обновления:\n" . print_r($updateData, true) . "\n", FILE_APPEND);
+    safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] Сделка ID $leadId: Данные обновления:\n" . print_r($updateData, true) . "\n");
     
     $updateResponse = $amoCRM->call('PATCH', "leads/{$leadId}", $updateData);
-    file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] Сделка ID $leadId: Ответ обновления сделки:\n" . print_r($updateResponse, true) . "\n", FILE_APPEND);
+    safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] Сделка ID $leadId: Ответ обновления сделки:\n" . print_r($updateResponse, true) . "\n");
 }
 
 header('Content-Type: application/json');

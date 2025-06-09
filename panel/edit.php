@@ -77,15 +77,15 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         </div>
         <div class="mb-3">
             <label class="form-label">Кейбокс</label>
-            <input type="text" name="keybox_code" class="form-control" value="<?= htmlspecialchars($apartment['keybox_code']) ?>">
+            <input type="text" name="keybox_code" class="form-control" value="<?= htmlspecialchars($apartment['keybox_code'] ?? '') ?>">
         </div>
         <div class="mb-3">
             <label class="form-label">Подъезд</label>
-            <input type="text" name="entrance_number" class="form-control" value="<?= htmlspecialchars($apartment['entrance_number']) ?>">
+            <input type="text" name="entrance_number" class="form-control" value="<?= htmlspecialchars($apartment['entrance_number'] ?? '') ?>">
         </div>
         <div class="mb-3">
             <label class="form-label">Этаж</label>
-            <input type="text" name="floor_number" class="form-control" value="<?= htmlspecialchars($apartment['floor_number']) ?>">
+            <input type="text" name="floor_number" class="form-control" value="<?= htmlspecialchars($apartment['floor_number'] ?? '') ?>">
         </div>
         <div class="mb-3">
             <label class="form-label">Залог (руб.)</label>
