@@ -1,5 +1,8 @@
 <?php
 
+// Включаем буферизацию вывода для предотвращения проблем с заголовками
+ob_start();
+
 require_once(__DIR__ . '/amo.class.php');
 require_once(__DIR__ . '/rc.class.php'); // Подключаем класс RealtyCalendar
 
@@ -91,10 +94,12 @@ foreach ($leadsArray as $leadStatus) {
     }
     
     $leadName = $leadData['name'];
+    safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] Сделка ID $leadId: Название сделки: '$leadName'\n");
     
     // Если название сделки начинается с "Бронь", извлекаем номер брони
-    if (!preg_match('/^Бронь\s+#?(\d+)/u', $leadName, $matches)) {
-        safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] Сделка ID $leadId не является бронью.\n");
+    // Улучшенное регулярное выражение для различных вариантов написания
+    if (!preg_match('/^(?:Бронь|бронь)\s*#?(\d+)/ui', $leadName, $matches)) {
+        safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] Сделка ID $leadId не является бронью. Название: '$leadName'\n");
         continue;
     }
     $bookingNumber = $matches[1];
@@ -199,14 +204,16 @@ foreach ($leadsArray as $leadStatus) {
                 $updateFields[] = ['field_id' => 852857, 'values' => [['value' => $apartmentData['recipient']]]];
                 $updateFields[] = ['field_id' => 873617, 'values' => [['value' => $apartmentData['wifi_name']]]];
                 $updateFields[] = ['field_id' => 873619, 'values' => [['value' => $apartmentData['wifi_password']]]];
-                if (!empty($apartmentData['keybox_code'])) {
-                    $updateFields[] = ['field_id' => 873621, 'values' => [['value' => $apartmentData['keybox_code']]]];
+                
+                // Безопасная обработка новых полей
+                if (isset($apartmentData['keybox_code']) && !empty($apartmentData['keybox_code'])) {
+                    $updateFields[] = ['field_id' => 977279, 'values' => [['value' => $apartmentData['keybox_code']]]];
                 }
-                if (!empty($apartmentData['entrance_number'])) {
-                    $updateFields[] = ['field_id' => 873623, 'values' => [['value' => $apartmentData['entrance_number']]]];
+                if (isset($apartmentData['entrance_number']) && !empty($apartmentData['entrance_number'])) {
+                    $updateFields[] = ['field_id' => 977281, 'values' => [['value' => $apartmentData['entrance_number']]]];
                 }
-                if (!empty($apartmentData['floor_number'])) {
-                    $updateFields[] = ['field_id' => 873625, 'values' => [['value' => $apartmentData['floor_number']]]];
+                if (isset($apartmentData['floor_number']) && !empty($apartmentData['floor_number'])) {
+                    $updateFields[] = ['field_id' => 977283, 'values' => [['value' => $apartmentData['floor_number']]]];
                 }
             }
             $stmt->close();
@@ -224,8 +231,24 @@ foreach ($leadsArray as $leadStatus) {
     
     $updateResponse = $amoCRM->call('PATCH', "leads/{$leadId}", $updateData);
     safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] Сделка ID $leadId: Ответ обновления сделки:\n" . print_r($updateResponse, true) . "\n");
+    
+    // Проверяем успешность обновления
+    if (isset($updateResponse['_embedded']['leads'][0]['id'])) {
+        safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] Сделка ID $leadId успешно обновлена\n");
+    } else {
+        safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] Ошибка обновления сделки ID $leadId\n");
+    }
 }
 
-header('Content-Type: application/json');
-echo json_encode(['status' => 'success', 'message' => 'Webhook обработан']);
+// Очищаем буфер вывода
+ob_clean();
+
+// Отправляем правильные заголовки и ответ
+if (!headers_sent()) {
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode(['status' => 'success', 'message' => 'Webhook обработан', 'processed_leads' => count($leadsArray)], JSON_UNESCAPED_UNICODE);
+} else {
+    // Если заголовки уже отправлены, просто выводим JSON
+    echo json_encode(['status' => 'success', 'message' => 'Webhook обработан', 'processed_leads' => count($leadsArray)], JSON_UNESCAPED_UNICODE);
+}
 exit;
