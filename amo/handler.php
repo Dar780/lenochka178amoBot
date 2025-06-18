@@ -3,11 +3,12 @@
 // Включаем буферизацию вывода для предотвращения проблем с заголовками
 ob_start();
 
-require_once(__DIR__ . '/amo.class.php');
-require_once(__DIR__ . '/rc.class.php'); // Подключаем класс RealtyCalendar
+require_once 'rc.class.php';
+require_once 'amo.class.php';
 
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
+// Отключаем вывод ошибок для продакшена
+ini_set('display_errors', 0);
+ini_set('log_errors', 1);
 
 $logFile = __DIR__ . '/handler_log.txt';
 $isCli = php_sapi_name() === 'cli';
