@@ -221,12 +221,6 @@ foreach ($leadsArray as $leadStatus) {
             'values'   => [
                 ['value' => (string)$paymentAmount]
             ]
-        ],
-        [
-            'field_id' => 977507, // RCS источник
-            'values'   => [
-                ['value' => $bookingSource]
-            ]
         ]
     ];
     
@@ -278,6 +272,15 @@ foreach ($leadsArray as $leadStatus) {
             safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] Ошибка подготовки запроса: " . $db->error . "\n");
         }
     }
+    
+    // ВРЕМЕННО ОТКЛЮЧЕНО: Добавляем RCS источник только если поле создано в АМО
+    // TODO: Создать поле 977507 в АМО, затем раскомментировать
+    /*
+    if (!empty($bookingSource) && $bookingSource !== 'unknown') {
+        $updateFields[] = ['field_id' => 977507, 'values' => [['value' => $bookingSource]]];
+        safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] Добавляем RCS источник: '$bookingSource'\n");
+    }
+    */
     
     // Формируем итоговый массив для обновления сделки
     $updateData = [
