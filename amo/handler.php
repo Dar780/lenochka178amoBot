@@ -158,6 +158,50 @@ foreach ($leadsArray as $leadStatus) {
     // Вычисляем остаток: если внесенная оплата есть, то остаток = totalAmount - paymentAmount, иначе остаток = totalAmount
     $remaining = ($paymentAmount > 0) ? ($totalAmount - $paymentAmount) : $totalAmount;
     
+    // Извлекаем источник бронирования из JSON (многоуровневый поиск)
+    $bookingSource = 'unknown';
+    
+    // 1. Ищем в прямом поле (по документации API)
+    if (isset($bookingInfo['source']) && !empty($bookingInfo['source'])) {
+        $bookingSource = $bookingInfo['source'];
+        safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] Бронь $bookingNumber: Найден источник в прямом поле: '$bookingSource'\n");
+    }
+    // 2. Ищем в booking_origin (по документации API)
+    elseif (isset($bookingInfo['booking_origin']['name']) && !empty($bookingInfo['booking_origin']['name'])) {
+        $bookingSource = $bookingInfo['booking_origin']['name'];
+        safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] Бронь $bookingNumber: Найден источник в booking_origin: '$bookingSource'\n");
+    }
+    // 3. Ищем в истории изменений "Источник бронирования" (наш текущий метод)
+    elseif (isset($bookingInfo['audits']) && is_array($bookingInfo['audits'])) {
+        foreach ($bookingInfo['audits'] as $auditRecord) {
+            if (isset($auditRecord['changes']) && is_array($auditRecord['changes'])) {
+                foreach ($auditRecord['changes'] as $change) {
+                    if (isset($change[0]) && $change[0] === 'Источник бронирования' && isset($change[1][1])) {
+                        $bookingSource = $change[1][1];
+                        safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] Бронь $bookingNumber: Найден источник в истории 'Источник бронирования': '$bookingSource'\n");
+                        break 2;
+                    }
+                }
+            }
+        }
+    }
+    // 4. Ищем в истории изменений "Источник" (fallback)
+    if ($bookingSource === 'unknown' && isset($bookingInfo['audits']) && is_array($bookingInfo['audits'])) {
+        foreach ($bookingInfo['audits'] as $auditRecord) {
+            if (isset($auditRecord['changes']) && is_array($auditRecord['changes'])) {
+                foreach ($auditRecord['changes'] as $change) {
+                    if (isset($change[0]) && $change[0] === 'Источник' && isset($change[1][1])) {
+                        $bookingSource = $change[1][1];
+                        safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] Бронь $bookingNumber: Найден источник в истории 'Источник': '$bookingSource'\n");
+                        break 2;
+                    }
+                }
+            }
+        }
+    }
+    
+    safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] Бронь $bookingNumber: Итоговый источник: '$bookingSource'\n");
+
     // Формируем массив для обновления кастомных полей
     $updateFields = [
         [
@@ -176,6 +220,12 @@ foreach ($leadsArray as $leadStatus) {
             'field_id' => 848327,
             'values'   => [
                 ['value' => (string)$paymentAmount]
+            ]
+        ],
+        [
+            'field_id' => 977507, // RCS источник
+            'values'   => [
+                ['value' => $bookingSource]
             ]
         ]
     ];
@@ -199,7 +249,14 @@ foreach ($leadsArray as $leadStatus) {
                 $updateFields[] = ['field_id' => 852847, 'values' => [['value' => $apartmentData['gate_code']]]];
                 $updateFields[] = ['field_id' => 852849, 'values' => [['value' => $apartmentData['intercom_code']]]];
                 $updateFields[] = ['field_id' => 852851, 'values' => [['value' => $apartmentData['deposit_amount']]]];
-                $updateFields[] = ['field_id' => 852853, 'values' => [['value' => $apartmentData['cleaning_fee']]]];
+                // Определяем стоимость уборки в зависимости от источника
+                $cleaningFee = $apartmentData['cleaning_fee']; // По умолчанию из БД
+                if (stripos($bookingSource, 'sutochno.ru') !== false) {
+                    $cleaningFee = 0; // Для sutochno.ru уборка = 0
+                    safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] Источник '$bookingSource' - устанавливаем уборку = 0\n");
+                }
+                
+                $updateFields[] = ['field_id' => 852853, 'values' => [['value' => $cleaningFee]]];
                 $updateFields[] = ['field_id' => 852855, 'values' => [['value' => $apartmentData['bank']]]];
                 $updateFields[] = ['field_id' => 852857, 'values' => [['value' => $apartmentData['recipient']]]];
                 $updateFields[] = ['field_id' => 873617, 'values' => [['value' => $apartmentData['wifi_name']]]];
