@@ -232,6 +232,7 @@ foreach ($leadsArray as $leadStatus) {
     
     // Если в ответе брони присутствует apartment_id, проверяем БД на наличие квартиры
     if (isset($bookingInfo['apartment_id'])) {
+        safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] Бронь $bookingNumber: Найден apartment_id = {$bookingInfo['apartment_id']}\n");
         require_once(__DIR__ . '/config.php'); // Подключаем файл конфигурации БД
         $apartmentId = $bookingInfo['apartment_id'];
         $stmt = $db->prepare("SELECT * FROM apartments WHERE realty_id = ?");
@@ -250,13 +251,16 @@ foreach ($leadsArray as $leadStatus) {
                 $updateFields[] = ['field_id' => 852849, 'values' => [['value' => $apartmentData['intercom_code']]]];
                 $updateFields[] = ['field_id' => 852851, 'values' => [['value' => $apartmentData['deposit_amount']]]];
                 // Определяем стоимость уборки в зависимости от источника
-                $cleaningFee = $apartmentData['cleaning_fee']; // По умолчанию из БД
-                if (stripos($bookingSource, 'sutochno.ru') !== false) {
-                    $cleaningFee = 0; // Для sutochno.ru уборка = 0
-                    safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] Источник '$bookingSource' - устанавливаем уборку = 0\n");
+                $isSutochno = stripos($bookingSource, 'sutochno.ru') !== false;
+                $cleaningFeeValue = $isSutochno ? '0' : (string)$apartmentData['cleaning_fee']; // Передаем как строку!
+                
+                if ($isSutochno) {
+                    safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] Источник '$bookingSource' - устанавливаем уборку = '0' (было {$apartmentData['cleaning_fee']})\n");
+                } else {
+                    safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] Источник '$bookingSource' - оставляем уборку из БД = '{$apartmentData['cleaning_fee']}'\n");
                 }
                 
-                $updateFields[] = ['field_id' => 852853, 'values' => [['value' => $cleaningFee]]];
+                $updateFields[] = ['field_id' => 852853, 'values' => [['value' => $cleaningFeeValue]]];
                 $updateFields[] = ['field_id' => 852855, 'values' => [['value' => $apartmentData['bank']]]];
                 $updateFields[] = ['field_id' => 852857, 'values' => [['value' => $apartmentData['recipient']]]];
                 $updateFields[] = ['field_id' => 873617, 'values' => [['value' => $apartmentData['wifi_name']]]];
@@ -272,11 +276,15 @@ foreach ($leadsArray as $leadStatus) {
                 if (isset($apartmentData['floor_number']) && !empty($apartmentData['floor_number'])) {
                     $updateFields[] = ['field_id' => 977283, 'values' => [['value' => $apartmentData['floor_number']]]];
                 }
+            } else {
+                safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] ВНИМАНИЕ: Квартира с realty_id $apartmentId НЕ НАЙДЕНА в БД! Дополнительные поля не будут заполнены.\n");
             }
             $stmt->close();
         } else {
             safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] Ошибка подготовки запроса: " . $db->error . "\n");
         }
+    } else {
+        safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] ВНИМАНИЕ: Бронь $bookingNumber не содержит apartment_id! Дополнительные поля не будут заполнены.\n");
     }
     
     // Формируем итоговый массив для обновления сделки
@@ -284,17 +292,21 @@ foreach ($leadsArray as $leadStatus) {
         'custom_fields_values' => $updateFields
     ];
     
-    safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] Сделка ID $leadId: Данные обновления:\n" . print_r($updateData, true) . "\n");
+    safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] Сделка ID $leadId: Данные обновления (источник: '$bookingSource'):\n" . json_encode($updateData, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE) . "\n");
     
-    $updateResponse = $amoCRM->call('PATCH', "leads/{$leadId}", $updateData);
-    safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] Сделка ID $leadId: Ответ обновления сделки:\n" . print_r($updateResponse, true) . "\n");
-    
-    // Проверяем успешность обновления
-    if (isset($updateResponse['_embedded']['leads'][0]['id'])) {
-        safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] Сделка ID $leadId успешно обновлена\n");
-    } else {
-        safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] Ошибка обновления сделки ID $leadId\n");
-    }
+    try {
+        $updateResponse = $amoCRM->call('PATCH', "leads/{$leadId}", $updateData);
+        safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] Сделка ID $leadId: Ответ обновления сделки:\n" . print_r($updateResponse, true) . "\n");
+        
+        // Проверяем успешность обновления
+        if (isset($updateResponse['_embedded']['leads'][0]['id'])) {
+            safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] ✅ Сделка ID $leadId успешно обновлена (источник: '$bookingSource')\n");
+        } else {
+            safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] ❌ Ошибка обновления сделки ID $leadId (источник: '$bookingSource')\n");
+        }
+         } catch (Exception $e) {
+         safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] ❌ ИСКЛЮЧЕНИЕ при обновлении сделки ID $leadId (источник: '$bookingSource'): " . $e->getMessage() . "\n");
+     }
 }
 
 // Очищаем буфер вывода
