@@ -74,3 +74,8 @@ class RealtyCalendar {
         return $this->request($url);
     }
 }
+
+
+/*$e = new RealtyCalendar('RYvxEsd46T9gycFUzpe8');
+$f = $e->getBookingInfo(101834488);
+var_dump($f);*/

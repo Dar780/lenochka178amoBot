@@ -3,12 +3,11 @@
 // Включаем буферизацию вывода для предотвращения проблем с заголовками
 ob_start();
 
-require_once 'rc.class.php';
-require_once 'amo.class.php';
+require_once(__DIR__ . '/amo.class.php');
+require_once(__DIR__ . '/rc.class.php'); // Подключаем класс RealtyCalendar
 
-// Отключаем вывод ошибок для продакшена
-ini_set('display_errors', 0);
-ini_set('log_errors', 1);
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
 
 $logFile = __DIR__ . '/handler_log.txt';
 $isCli = php_sapi_name() === 'cli';
@@ -222,12 +221,14 @@ foreach ($leadsArray as $leadStatus) {
             'values'   => [
                 ['value' => (string)$paymentAmount]
             ]
+        ],
+        [
+            'field_id' => 977507, // RCS источник
+            'values'   => [
+                ['value' => $bookingSource]
+            ]
         ]
     ];
-    
-    // Переменные по умолчанию для стоимости уборки
-    $cleaningFee = 0; // По умолчанию 0, если квартира не найдена
-    $apartmentFound = false;
     
     // Если в ответе брони присутствует apartment_id, проверяем БД на наличие квартиры
     if (isset($bookingInfo['apartment_id'])) {
@@ -240,11 +241,7 @@ foreach ($leadsArray as $leadStatus) {
             $result = $stmt->get_result();
             if ($result && $result->num_rows > 0) {
                 $apartmentData = $result->fetch_assoc();
-                $apartmentFound = true;
                 safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] Найдена квартира для realty_id $apartmentId:\n" . print_r($apartmentData, true) . "\n");
-                
-                // Устанавливаем стоимость уборки из БД
-                $cleaningFee = $apartmentData['cleaning_fee'];
                 
                 $updateFields[] = ['field_id' => 852841, 'values' => [['value' => $apartmentData['street']]]];
                 $updateFields[] = ['field_id' => 852843, 'values' => [['value' => $apartmentData['house_number']]]];
@@ -252,6 +249,14 @@ foreach ($leadsArray as $leadStatus) {
                 $updateFields[] = ['field_id' => 852847, 'values' => [['value' => $apartmentData['gate_code']]]];
                 $updateFields[] = ['field_id' => 852849, 'values' => [['value' => $apartmentData['intercom_code']]]];
                 $updateFields[] = ['field_id' => 852851, 'values' => [['value' => $apartmentData['deposit_amount']]]];
+                // Определяем стоимость уборки в зависимости от источника
+                $cleaningFee = $apartmentData['cleaning_fee']; // По умолчанию из БД
+                if (stripos($bookingSource, 'sutochno.ru') !== false) {
+                    $cleaningFee = 0; // Для sutochno.ru уборка = 0
+                    safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] Источник '$bookingSource' - устанавливаем уборку = 0\n");
+                }
+                
+                $updateFields[] = ['field_id' => 852853, 'values' => [['value' => $cleaningFee]]];
                 $updateFields[] = ['field_id' => 852855, 'values' => [['value' => $apartmentData['bank']]]];
                 $updateFields[] = ['field_id' => 852857, 'values' => [['value' => $apartmentData['recipient']]]];
                 $updateFields[] = ['field_id' => 873617, 'values' => [['value' => $apartmentData['wifi_name']]]];
@@ -267,36 +272,12 @@ foreach ($leadsArray as $leadStatus) {
                 if (isset($apartmentData['floor_number']) && !empty($apartmentData['floor_number'])) {
                     $updateFields[] = ['field_id' => 977283, 'values' => [['value' => $apartmentData['floor_number']]]];
                 }
-            } else {
-                safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] Квартира с realty_id $apartmentId не найдена в БД\n");
             }
             $stmt->close();
         } else {
             safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] Ошибка подготовки запроса: " . $db->error . "\n");
         }
-    } else {
-        safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] apartment_id не найден в данных брони\n");
     }
-    
-    // ВАЖНО: Логика стоимости уборки для Суточно.ру работает ВСЕГДА, независимо от наличия квартиры в БД
-    if (stripos($bookingSource, 'sutochno.ru') !== false) {
-        $cleaningFee = 0; // Для sutochno.ru уборка ВСЕГДА = 0
-        safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] Источник '$bookingSource' - устанавливаем уборку = 0 (независимо от БД)\n");
-    } else {
-        safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] Источник '$bookingSource' - стоимость уборки = $cleaningFee" . ($apartmentFound ? " (из БД)" : " (default)") . "\n");
-    }
-    
-    // Добавляем стоимость уборки в поля обновления
-    $updateFields[] = ['field_id' => 852853, 'values' => [['value' => $cleaningFee]]];
-    
-    // ВРЕМЕННО ОТКЛЮЧЕНО: Добавляем RCS источник только если поле создано в АМО
-    // TODO: Создать поле 977507 в АМО, затем раскомментировать
-    /*
-    if (!empty($bookingSource) && $bookingSource !== 'unknown') {
-        $updateFields[] = ['field_id' => 977507, 'values' => [['value' => $bookingSource]]];
-        safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] Добавляем RCS источник: '$bookingSource'\n");
-    }
-    */
     
     // Формируем итоговый массив для обновления сделки
     $updateData = [
