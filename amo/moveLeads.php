@@ -24,8 +24,7 @@ if (!is_dir($bookingsDir)) {
 }
 
 // Собираем все сделки для перемещения
-$leadsToMove = [];
-$today = date("Y-m-d");
+$leadsToMove = []$targetDate = date("Y-m-d", strtotime("+1 day")); // Проверяем дату выселения на завтра
 
 $files = glob($bookingsDir . '/*.json');
 foreach ($files as $file) {
@@ -52,11 +51,11 @@ foreach ($files as $file) {
         $endDate = explode(' ', $endDate)[0];
     }
     
-    file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] DEBUG: Бронь ID " . $bookingData['id'] . ", дата выезда: " . $bookingData['end_date'] . ", после обработки: $endDate, сравнивается с today=$today\n", FILE_APPEND);
+    file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] DEBUG: Бронь ID " . $bookingData['id'] . ", дата выезда: " . $bookingData['end_date'] . ", после обработки: $endDate, сравнивается с targetDate=$targetDate\n", FILE_APPEND);
     
     // Проверяем, совпадает ли дата выезда с сегодняшней
     if (
-        $endDate === $today &&
+        $endDate === $targetDate &&
         (!isset($bookingData['is_moved_amo']) || $bookingData['is_moved_amo'] == 0)
     ) {
         $leadsToMove[$bookingData['lead_id']] = 74365494; // ID нового этапа - "Выселение"
@@ -76,7 +75,7 @@ if (!empty($leadsToMove)) {
             if (!$bookingData) {
                 continue;
             }
-            if (isset($bookingData['end_date']) && $bookingData['end_date'] === $today && isset($bookingData['lead_id']) && (!isset($bookingData['is_moved_amo']) || $bookingData['is_moved_amo'] == 0)) {
+            if (isset($bookingData['end_date']) && $bookingData['end_date'] === $targetDate && isset($bookingData['lead_id']) && (!isset($bookingData['is_moved_amo']) || $bookingData['is_moved_amo'] == 0)) {
                 $bookingData['is_moved_amo'] = 1;
                 file_put_contents($file, json_encode($bookingData, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
             }
