@@ -24,7 +24,8 @@ if (!is_dir($bookingsDir)) {
 }
 
 // Собираем все сделки для перемещения
-$leadsToMove = []$targetDate = date("Y-m-d", strtotime("+1 day")); // Проверяем дату выселения на завтра
+$leadsToMove = [];
+$targetDate = date("Y-m-d", strtotime("+1 day")); // Проверяем дату выселения на завтра
 
 $files = glob($bookingsDir . '/*.json');
 foreach ($files as $file) {
