@@ -250,11 +250,11 @@ foreach ($leadsArray as $leadStatus) {
                 $updateFields[] = ['field_id' => 852847, 'values' => [['value' => $apartmentData['gate_code']]]];
                 $updateFields[] = ['field_id' => 852849, 'values' => [['value' => $apartmentData['intercom_code']]]];
                 $updateFields[] = ['field_id' => 852851, 'values' => [['value' => $apartmentData['deposit_amount']]]];
-                // Определяем стоимость уборки в зависимости от источника
-                $isSutochno = stripos($bookingSource, 'sutochno.ru') !== false;
-                $cleaningFeeValue = $isSutochno ? '0' : (string)$apartmentData['cleaning_fee']; // Передаем как строку!
+                // Для источников sutochno.ru и Bronevik.com уборка = 0
+                $isZeroCleaningSource = (stripos($bookingSource, 'sutochno.ru') !== false) || (stripos($bookingSource, 'bronevik.com') !== false);
+                $cleaningFeeValue     = $isZeroCleaningSource ? '0' : (string)$apartmentData['cleaning_fee']; // Передаем как строку!
                 
-                if ($isSutochno) {
+                if ($isZeroCleaningSource) {
                     safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] Источник '$bookingSource' - устанавливаем уборку = '0' (было {$apartmentData['cleaning_fee']})\n");
                 } else {
                     safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] Источник '$bookingSource' - оставляем уборку из БД = '{$apartmentData['cleaning_fee']}'\n");
