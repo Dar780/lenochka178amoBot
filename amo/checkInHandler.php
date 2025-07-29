@@ -19,6 +19,8 @@ function safeLog($logFile, $message) {
 
 safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] Check-in handler request registered\n");
 
+
+
 // Получаем данные вебхука
 if (!$isCli) {
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -103,33 +105,34 @@ foreach ($leadsArray as $lead) {
             continue;
         }
         
-        // Ищем поле "Дата заезда"
-        $checkInDate = null;
-        foreach ($leadData['custom_fields_values'] as $field) {
-            if ($field['field_id'] == $CHECK_IN_DATE_FIELD_ID) {
-                $checkInDate = $field['values'][0]['value'] ?? null;
-                break;
-            }
-        }
+        // Получаем значение даты заезда через метод getCustomFieldValue
+        $checkInDateValues = $amoCRM->getCustomFieldValue($leadData, $CHECK_IN_DATE_FIELD_ID);
         
-        safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] Сделка $leadId: дата заезда = '$checkInDate', сегодня = '$today'\n");
-        
-        if (!$checkInDate) {
+        if (empty($checkInDateValues)) {
             safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] Сделка $leadId: поле 'Дата заезда' не найдено или пустое\n");
             continue;
         }
         
-        // Приводим дату к формату Y-m-d
-        $checkInDateFormatted = null;
+        $checkInDate = $checkInDateValues[0];
+        
+        // Логируем сырые данные для отладки
+        safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] Сделка $leadId: сырая дата заезда = " . var_export($checkInDate, true) . "\n");
+        safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] Сделка $leadId: тип даты = " . gettype($checkInDate) . "\n");
+        
+        // Проверяем, является ли значение числовым (timestamp)
         if (is_numeric($checkInDate)) {
-            // Если это timestamp
-            $checkInDateFormatted = date('Y-m-d', $checkInDate);
+            // AmoCRM передает timestamp в UTC, но нам нужно перевести его в московское время
+            // Добавляем смещение для московской временной зоны (UTC+3)
+            $checkInDateFormatted = date('Y-m-d', $checkInDate + (3*3600)); // +3 часа в секундах
+        } elseif (strpos($checkInDate, ' ') !== false) {
+            // Если дата содержит пробел (формат с временем), извлекаем только дату
+            $checkInDateFormatted = explode(' ', $checkInDate)[0];
         } else {
-            // Если это строка даты
-            $checkInDateFormatted = date('Y-m-d', strtotime($checkInDate));
+            // Если это просто строка даты
+            $checkInDateFormatted = $checkInDate;
         }
         
-        safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] Сделка $leadId: отформатированная дата заезда = '$checkInDateFormatted'\n");
+        safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] Сделка $leadId: дата заезда = '$checkInDate', отформатированная = '$checkInDateFormatted', сегодня = '$today'\n");
         
         // Проверяем, совпадает ли дата заезда с сегодняшней
         if ($checkInDateFormatted === $today) {
