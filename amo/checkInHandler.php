@@ -21,6 +21,51 @@ safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] Check-in handler request regist
 
 // Получаем данные вебхука
 if (!$isCli) {
+    safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] Начинаем обработку web-запроса\n");
+    
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+        safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] Ошибка: не POST запрос\n");
+        header('Content-Type: application/json');
+        echo json_encode(['status' => 'error', 'message' => 'Только POST запросы разрешены']);
+        exit;
+    }
+    
+    safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] Метод запроса: " . $_SERVER['REQUEST_METHOD'] . "\n");
+    
+    // Получаем сырые данные
+    try {
+        $rawInput = file_get_contents('php://input');
+        safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] Сырые данные получены, длина: " . strlen($rawInput) . "\n");
+        safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] Сырые данные: " . $rawInput . "\n");
+    } catch (Exception $e) {
+        safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] Ошибка получения сырых данных: " . $e->getMessage() . "\n");
+        $rawInput = '';
+    }
+    
+    // Пробуем парсить как JSON
+    try {
+        $postData = json_decode($rawInput, true);
+        safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] JSON decode выполнен\n");
+        
+        if (json_last_error() !== JSON_ERROR_NONE) {
+            safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] JSON parse error: " . json_last_error_msg() . ", используем $_POST\n");
+            $postData = $_POST;
+        }
+    } catch (Exception $e) {
+        safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] Ошибка JSON decode: " . $e->getMessage() . "\n");
+        $postData = $_POST;
+    }
+    
+    safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] Данные получены, проверяем на пустоту\n");
+    
+    if (empty($postData)) {
+        safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] Ошибка: нет полученных данных\n");
+        header('Content-Type: application/json');
+        echo json_encode(['status' => 'error', 'message' => 'Нет полученных данных']);
+        exit;
+    }
+    
+    safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] Данные получены успешно\n");
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
         header('Content-Type: application/json');
         echo json_encode(['status' => 'error', 'message' => 'Только POST запросы разрешены']);
