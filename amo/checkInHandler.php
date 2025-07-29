@@ -19,8 +19,6 @@ function safeLog($logFile, $message) {
 
 safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] Check-in handler request registered\n");
 
-
-
 // Получаем данные вебхука
 if (!$isCli) {
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -28,10 +26,20 @@ if (!$isCli) {
         echo json_encode(['status' => 'error', 'message' => 'Только POST запросы разрешены']);
         exit;
     }
-    $postData = $_POST;
-    if (empty($postData)) {
-        parse_str(file_get_contents('php://input'), $postData);
+    
+    // Получаем сырые данные
+    $rawInput = file_get_contents('php://input');
+    safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] Сырые данные: " . $rawInput . "\n");
+    
+    // Пробуем парсить как JSON
+    $postData = json_decode($rawInput, true);
+    
+    if (json_last_error() !== JSON_ERROR_NONE) {
+        // Если JSON не парсится, пробуем $_POST
+        $postData = $_POST;
+        safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] JSON parse error: " . json_last_error_msg() . ", используем $_POST\n");
     }
+    
     if (empty($postData)) {
         header('Content-Type: application/json');
         echo json_encode(['status' => 'error', 'message' => 'Нет полученных данных']);
