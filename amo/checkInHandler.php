@@ -78,8 +78,13 @@ $amoCRM->setToken($token);
 // Извлекаем ID сделок из webhook или params
 $leadsArray = [];
 
-// Сначала проверяем params (если переданы конкретные сделки)
-if (isset($postData['params']['leads']) && is_array($postData['params']['leads'])) {
+// Проверяем формат SalesBot (AmoCRM)
+if (isset($postData['0']['question'][0]['params']['leads'])) {
+    $leadsArray = $postData['0']['question'][0]['params']['leads'];
+    safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] Получены сделки из SalesBot: " . count($leadsArray) . " шт.\n");
+}
+// Проверяем прямой формат params
+elseif (isset($postData['params']['leads']) && is_array($postData['params']['leads'])) {
     $leadsArray = $postData['params']['leads'];
     safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] Получены сделки из params: " . count($leadsArray) . " шт.\n");
 } else {
