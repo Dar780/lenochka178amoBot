@@ -78,17 +78,27 @@ $amoCRM->setToken($token);
 // Извлекаем ID сделок из webhook или params
 $leadsArray = [];
 
-// Проверяем формат SalesBot (AmoCRM)
-if (isset($postData['0']['question'][0]['params']['leads'])) {
-    $leadsArray = $postData['0']['question'][0]['params']['leads'];
-    safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] Получены сделки из SalesBot: " . count($leadsArray) . " шт.\n");
+// Проверяем формат SalesBot widget_request (прямой)
+if (isset($postData['data']['leads']) && is_array($postData['data']['leads'])) {
+    $leadsArray = $postData['data']['leads'];
+    safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] Получены сделки из SalesBot widget_request (прямой): " . count($leadsArray) . " шт.\n");
 }
-// Проверяем прямой формат params
+// Проверяем формат SalesBot widget_request (из редактора кода)
+elseif (isset($postData['0']['question'][0]['params']['data']['leads'])) {
+    $leadsArray = $postData['0']['question'][0]['params']['data']['leads'];
+    safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] Получены сделки из SalesBot widget_request (редактор): " . count($leadsArray) . " шт.\n");
+}
+// Проверяем формат SalesBot (старый)
+elseif (isset($postData['0']['question'][0]['params']['leads'])) {
+    $leadsArray = $postData['0']['question'][0]['params']['leads'];
+    safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] Получены сделки из SalesBot (старый формат): " . count($leadsArray) . " шт.\n");
+}
+// Проверяем прямой формат params (Postman)
 elseif (isset($postData['params']['leads']) && is_array($postData['params']['leads'])) {
     $leadsArray = $postData['params']['leads'];
     safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] Получены сделки из params: " . count($leadsArray) . " шт.\n");
 } else {
-    // Если params нет, берем из стандартного webhook
+    // Fallback на стандартный webhook
     if (isset($postData['leads']['add'])) {
         $leadsArray = array_merge($leadsArray, $postData['leads']['add']);
     }
