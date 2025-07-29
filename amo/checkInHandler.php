@@ -21,51 +21,28 @@ safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] Check-in handler request regist
 
 // Получаем данные вебхука
 if (!$isCli) {
-    safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] Начинаем обработку web-запроса\n");
-    
     if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
-        safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] Ошибка: не POST запрос\n");
         header('Content-Type: application/json');
         echo json_encode(['status' => 'error', 'message' => 'Только POST запросы разрешены']);
         exit;
     }
     
-    safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] Метод запроса: " . $_SERVER['REQUEST_METHOD'] . "\n");
-    
     // Получаем сырые данные
-    try {
-        $rawInput = file_get_contents('php://input');
-        safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] Сырые данные получены, длина: " . strlen($rawInput) . "\n");
-        safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] Сырые данные: " . $rawInput . "\n");
-    } catch (Exception $e) {
-        safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] Ошибка получения сырых данных: " . $e->getMessage() . "\n");
-        $rawInput = '';
-    }
+    $rawInput = file_get_contents('php://input');
     
     // Пробуем парсить как JSON
-    try {
-        $postData = json_decode($rawInput, true);
-        safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] JSON decode выполнен\n");
-        
-        if (json_last_error() !== JSON_ERROR_NONE) {
-            safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] JSON parse error: " . json_last_error_msg() . ", используем $_POST\n");
-            $postData = $_POST;
-        }
-    } catch (Exception $e) {
-        safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] Ошибка JSON decode: " . $e->getMessage() . "\n");
+    $postData = json_decode($rawInput, true);
+    
+    if (json_last_error() !== JSON_ERROR_NONE) {
+        // Если JSON не парсится, пробуем $_POST
         $postData = $_POST;
     }
     
-    safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] Данные получены, проверяем на пустоту\n");
-    
     if (empty($postData)) {
-        safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] Ошибка: нет полученных данных\n");
         header('Content-Type: application/json');
         echo json_encode(['status' => 'error', 'message' => 'Нет полученных данных']);
         exit;
     }
-    
-    safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] Данные получены успешно\n");
 } else {
     // Тестовый payload для CLI
     $postData = [
@@ -81,8 +58,7 @@ if (!$isCli) {
     ];
 }
 
-// Логируем входящие данные вебхука
-safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] Входящие данные вебхука:\n" . print_r($postData, true) . "\n");
+
 
 // Конфигурация AmoCRM
 $subdomain = 'lenasutochno178';
@@ -96,65 +72,90 @@ $RESIDENCE_STAGE_ID = 74364974;    // ID этапа "Проживание"
 $amoCRM = new AmoCRM($subdomain);
 $amoCRM->setToken($token);
 
-// Папка с JSON-файлами
-$bookingsDir = __DIR__ . '/bookings';
-if (!is_dir($bookingsDir)) {
-    safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] Папка bookings не найдена.\n");
-    header('Content-Type: application/json');
-    echo json_encode(['status' => 'error', 'message' => 'Папка bookings не найдена']);
-    exit;
+// Извлекаем ID сделок из webhook или params
+$leadsArray = [];
+
+// Извлекаем сделки из различных форматов webhook
+if (isset($postData['data']['leads']) && is_array($postData['data']['leads'])) {
+    $leadsArray = $postData['data']['leads'];
+}
+elseif (isset($postData['0']['question'][0]['params']['data']['leads'])) {
+    $leadsArray = $postData['0']['question'][0]['params']['data']['leads'];
+}
+elseif (isset($postData['0']['question'][0]['params']['leads'])) {
+    $leadsArray = $postData['0']['question'][0]['params']['leads'];
+}
+elseif (isset($postData['params']['leads']) && is_array($postData['params']['leads'])) {
+    $leadsArray = $postData['params']['leads'];
+} else {
+    // Fallback на стандартный webhook
+    if (isset($postData['leads']['add'])) {
+        $leadsArray = array_merge($leadsArray, $postData['leads']['add']);
+    }
+    if (isset($postData['leads']['status'])) {
+        $leadsArray = array_merge($leadsArray, $postData['leads']['status']);
+    }
+    if (isset($postData['leads']['update'])) {
+        $leadsArray = array_merge($leadsArray, $postData['leads']['update']);
+    }
 }
 
-// Собираем все сделки для перемещения
-$leadsToMove = [];
-$today = date('Y-m-d');
-
-$files = glob($bookingsDir . '/*.json');
-safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] Найдено " . count($files) . " JSON файлов для проверки\n");
-
-foreach ($files as $file) {
-    $json = file_get_contents($file);
-    $bookingData = json_decode($json, true);
-    if (!$bookingData) {
-        continue;
-    }
-    
-    // Проверяем наличие необходимых полей
-    if (!isset($bookingData['begin_date'], $bookingData['apartment_id'], $bookingData['lead_id'])) {
-        safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] Файл " . basename($file) . ": отсутствуют необходимые поля\n");
-        continue;
-    }
-    
-    // Получаем дату заезда и обрабатываем возможные форматы
-    $checkInDate = $bookingData['begin_date'];
-    
-    // Обрабатываем дату с учетом возможного формата timestamp
-    if (is_numeric($checkInDate)) {
-        // AmoCRM передает timestamp в UTC, добавляем смещение для московской временной зоны
-        $checkInDateFormatted = date('Y-m-d', $checkInDate + (3*3600)); // +3 часа в секундах
-    } elseif (strpos($checkInDate, ' ') !== false) {
-        // Если дата содержит пробел (формат с временем), извлекаем только дату
-        $checkInDateFormatted = explode(' ', $checkInDate)[0];
-    } else {
-        // Если это просто строка даты
-        $checkInDateFormatted = $checkInDate;
-    }
-    
-    safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] Бронь ID " . $bookingData['id'] . ", дата заезда: " . $bookingData['begin_date'] . ", после обработки: $checkInDateFormatted, сравнивается с today=$today\n");
-    
-    // Проверяем, совпадает ли дата заезда с сегодняшней
-    if ($checkInDateFormatted === $today) {
-        $leadsToMove[$bookingData['lead_id']] = $RESIDENCE_STAGE_ID;
-        safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] ✅ Для брони ID " . $bookingData['id'] . " найдено совпадение. Lead ID: " . $bookingData['lead_id'] . " → этап 'Проживание'\n");
-    } else {
-        safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] ❌ Бронь ID " . $bookingData['id'] . ": дата заезда НЕ совпадает с сегодня\n");
-    }
-}
+safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] Получено сделок для обработки: " . count($leadsArray) . " шт.\n");
 
 $leadsToMove = [];
 $today = date('Y-m-d');
 
+foreach ($leadsArray as $lead) {
+    $leadId = (int)$lead['id'];
+    
+    safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] Обрабатываем сделку ID: $leadId\n");
+    
+    try {
+        // Получаем данные сделки из AmoCRM
+        $leadData = $amoCRM->call('GET', "leads/{$leadId}");
+        
+        if (!$leadData || !isset($leadData['custom_fields_values'])) {
+            safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] Сделка $leadId: нет данных или custom_fields_values\n");
+            continue;
+        }
+        
+        // Получаем значение даты заезда через метод getCustomFieldValue
+        $checkInDateValues = $amoCRM->getCustomFieldValue($leadData, $CHECK_IN_DATE_FIELD_ID);
+        
+        if (empty($checkInDateValues)) {
+            safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] Сделка $leadId: поле 'Дата заезда' не найдено или пустое\n");
+            continue;
+        }
+        
+        $checkInDate = $checkInDateValues[0];
+        
 
+        
+        // Проверяем, является ли значение числовым (timestamp)
+        if (is_numeric($checkInDate)) {
+            // AmoCRM передает timestamp в UTC, но нам нужно перевести его в московское время
+            // Добавляем смещение для московской временной зоны (UTC+3)
+            $checkInDateFormatted = date('Y-m-d', $checkInDate + (3*3600)); // +3 часа в секундах
+        } elseif (strpos($checkInDate, ' ') !== false) {
+            // Если дата содержит пробел (формат с временем), извлекаем только дату
+            $checkInDateFormatted = explode(' ', $checkInDate)[0];
+        } else {
+            // Если это просто строка даты
+            $checkInDateFormatted = $checkInDate;
+        }
+        
+        // Проверяем, совпадает ли дата заезда с сегодняшней
+        if ($checkInDateFormatted === $today) {
+            $leadsToMove[$leadId] = $RESIDENCE_STAGE_ID;
+            safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] ✅ Сделка $leadId: дата заезда $checkInDateFormatted = сегодня, переводим в 'Проживание'\n");
+        } else {
+            safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] Сделка $leadId: дата заезда $checkInDateFormatted ≠ сегодня ($today)\n");
+        }
+        
+    } catch (Exception $e) {
+        safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] ❌ Ошибка при обработке сделки $leadId: " . $e->getMessage() . "\n");
+    }
+}
 
 // Перемещаем сделки, если есть что перемещать
 if (!empty($leadsToMove)) {
@@ -168,7 +169,7 @@ if (!empty($leadsToMove)) {
         }
         
         $moveResponse = $amoCRM->moveLeads($leadsToMove);
-        safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] ✅ Ответ перемещения сделок:\n" . print_r($moveResponse, true) . "\n");
+        safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] ✅ Сделки успешно перемещены в этап 'Проживание'\n");
         
     } catch (Exception $e) {
         safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] ❌ Ошибка при перемещении сделок: " . $e->getMessage() . "\n");
@@ -181,8 +182,8 @@ if (!empty($leadsToMove)) {
 header('Content-Type: application/json');
 echo json_encode([
     'status' => 'success', 
-    'message' => 'Проверка завершена',
-    'total_bookings_checked' => count($files),
+    'message' => 'Webhook обработан',
+    'processed_leads' => count($leadsArray),
     'leads_to_move' => count($leadsToMove),
     'target_date' => $today
 ], JSON_UNESCAPED_UNICODE);
