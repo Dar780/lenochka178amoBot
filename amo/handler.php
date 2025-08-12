@@ -235,6 +235,10 @@ foreach ($leadsArray as $leadStatus) {
         safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] Бронь $bookingNumber: Найден apartment_id = {$bookingInfo['apartment_id']}\n");
         require_once(__DIR__ . '/config.php'); // Подключаем файл конфигурации БД
         $apartmentId = $bookingInfo['apartment_id'];
+        if ($db === null) {
+            safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] ВНИМАНИЕ: БД недоступна, пропускаем заполнение адресных полей.\n");
+            // продолжаем без адресных полей
+        } else {
         $stmt = $db->prepare("SELECT * FROM apartments WHERE realty_id = ?");
         if ($stmt) {
             $stmt->bind_param("i", $apartmentId);
@@ -283,6 +287,7 @@ foreach ($leadsArray as $leadStatus) {
         } else {
             safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] Ошибка подготовки запроса: " . $db->error . "\n");
         }
+        }
     } else {
         safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] ВНИМАНИЕ: Бронь $bookingNumber не содержит apartment_id! Дополнительные поля не будут заполнены.\n");
     }
@@ -313,11 +318,12 @@ foreach ($leadsArray as $leadStatus) {
 ob_clean();
 
 // Отправляем правильные заголовки и ответ
+$processedLeads = is_array($leadsArray) ? count($leadsArray) : 0;
 if (!headers_sent()) {
     header('Content-Type: application/json; charset=utf-8');
-    echo json_encode(['status' => 'success', 'message' => 'Webhook обработан', 'processed_leads' => count($leadsArray)], JSON_UNESCAPED_UNICODE);
+    echo json_encode(['status' => 'success', 'message' => 'Webhook обработан', 'processed_leads' => $processedLeads], JSON_UNESCAPED_UNICODE);
 } else {
     // Если заголовки уже отправлены, просто выводим JSON
-    echo json_encode(['status' => 'success', 'message' => 'Webhook обработан', 'processed_leads' => count($leadsArray)], JSON_UNESCAPED_UNICODE);
+    echo json_encode(['status' => 'success', 'message' => 'Webhook обработан', 'processed_leads' => $processedLeads], JSON_UNESCAPED_UNICODE);
 }
 exit;
