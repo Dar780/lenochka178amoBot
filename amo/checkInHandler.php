@@ -72,6 +72,9 @@ $RESIDENCE_STAGE_ID = 74364974;    // ID этапа "Проживание"
 $amoCRM = new AmoCRM($subdomain);
 $amoCRM->setToken($token);
 
+// Статусы, которые нужно исключить из любой автоматической обработки
+$EXCLUDED_STATUS_IDS = [77524106, 76864146, 79570730, 79570734, 79893902];
+
 // Извлекаем ID сделок из webhook или params
 $leadsArray = [];
 
@@ -114,6 +117,12 @@ foreach ($leadsArray as $lead) {
         // Получаем данные сделки из AmoCRM
         $leadData = $amoCRM->call('GET', "leads/{$leadId}");
         
+        // Пропускаем сделки из исключённых статусов
+        if (isset($leadData['status_id']) && in_array((int)$leadData['status_id'], $EXCLUDED_STATUS_IDS, true)) {
+            safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] SKIP: Lead $leadId is in an excluded status (" . $leadData['status_id'] . ")\n");
+            continue;
+        }
+
         if (!$leadData || !isset($leadData['custom_fields_values'])) {
             safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] Сделка $leadId: нет данных или custom_fields_values\n");
             continue;

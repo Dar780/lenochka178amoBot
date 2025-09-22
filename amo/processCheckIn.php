@@ -44,6 +44,9 @@ $SEND_INSTRUCTION_STAGE_ID = 74364966;       // "Отправка инструк
 $PIPELINE_ID = 9266190;                       // RealtyCalendar pipeline ID
 $CHECK_IN_DATE_FIELD_ID = 833655;            // check-in date field ID
 
+// Статусы, которые нужно исключить из любой автоматической обработки
+$EXCLUDED_STATUS_IDS = [77524106, 76864146, 79570730, 79570734, 79893902];
+
 // Extract lead IDs from the webhook
 $leadsArray = [];
 if (isset($postData['leads']['add'])) {
@@ -75,6 +78,12 @@ foreach ($leadsArray as $lead) {
         // Check pipeline ID
         if ($leadData['pipeline_id'] != $PIPELINE_ID) {
             file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] Lead $leadId is not in the target pipeline\n", FILE_APPEND);
+            continue;
+        }
+
+        // Пропускаем сделки из исключённых статусов
+        if (isset($leadData['status_id']) && in_array((int)$leadData['status_id'], $EXCLUDED_STATUS_IDS, true)) {
+            file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] SKIP: Lead $leadId is in an excluded status (" . $leadData['status_id'] . ")\n", FILE_APPEND);
             continue;
         }
         

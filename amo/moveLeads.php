@@ -16,6 +16,9 @@ $token = "eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsImp0aSI6ImEzNjg1ZGM3NGI1NGQyNTY2MD
 $amoCRM = new AmoCRM($subdomain);
 $amoCRM->setToken($token);
 
+// Статусы, которые нужно исключить из любой автоматической обработки
+$EXCLUDED_STATUS_IDS = [77524106, 76864146, 79570730, 79570734, 79893902];
+
 // Папка с JSON-файлами
 $bookingsDir = __DIR__ . '/bookings';
 if (!is_dir($bookingsDir)) {
@@ -40,6 +43,24 @@ foreach ($files as $file) {
         continue;
     }
     
+    // Проверяем текущий статус сделки и пропускаем, если она в исключённых статусах
+    try {
+        $leadData = $amoCRM->getLeadById((int)$bookingData['lead_id']);
+        if (isset($leadData['status_id']) && in_array((int)$leadData['status_id'], $EXCLUDED_STATUS_IDS, true)) {
+            file_put_contents(
+                $logFile,
+                "[" . date('Y-m-d H:i:s') . "] SKIP: Бронь ID " . ($bookingData['id'] ?? 'unknown') . ", lead " . $bookingData['lead_id'] .
+                " находится в исключённом статусе (" . $leadData['status_id'] . ").\n",
+                FILE_APPEND
+            );
+            continue;
+        }
+    } catch (Exception $e) {
+        file_put_contents($logFile, "[" . date('Y-m-d H:i:s') . "] Ошибка получения сделки " . $bookingData['lead_id'] . ": " . $e->getMessage() . "\n", FILE_APPEND);
+        // В случае ошибки запроса к AmoCRM — безопаснее пропустить, чтобы не переместить лишнее
+        continue;
+    }
+
     // Получаем дату выезда и обрабатываем возможные форматы
     $endDate = $bookingData['end_date'];
     
