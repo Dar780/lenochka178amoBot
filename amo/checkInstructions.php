@@ -23,7 +23,7 @@ $PIPELINE_ID = 9266190;                      // RealtyCalendar pipeline ID
 $CHECK_IN_DATE_FIELD_ID = 833655;            // check-in date field ID
 
 // Статусы, которые нужно исключить из любой автоматической обработки
-$EXCLUDED_STATUS_IDS = [77524106, 76864146, 79570730, 79570734, 79893902];
+$EXCLUDED_STATUS_IDS = [77524106, 76864146, 79570730, 79570734, 79893902, 143];
 
 // Function to get all open leads in a specific pipeline
 function getOpenLeadsInPipeline($amoCRM, $pipelineId) {
