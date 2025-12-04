@@ -21,6 +21,50 @@ function safeLog($logFile, $message) {
     }
 }
 
+/**
+ * Список полей, которые приходят из Realty и сигнализируют,
+ * что данные реально обновились.
+ */
+$REALTY_FIELD_IDS = [
+    833655, // Дата заезда
+    833657, // Дата выезда
+    833661, // Количество гостей
+    833663, // Количество комнат
+    833665, // Количество спальных мест
+    833667, // Город / адресные данные
+    833669, // Адрес (улица+дом)
+];
+
+/**
+ * Проверяем, содержит ли блок webhook'а изменения по нужным полям.
+ */
+function hasRealtyFieldChanges(array $leadPayload, array $realtyFieldIds): bool {
+    $fieldBlocks = [];
+
+    if (isset($leadPayload['custom_fields']) && is_array($leadPayload['custom_fields'])) {
+        $fieldBlocks[] = $leadPayload['custom_fields'];
+    }
+
+    if (isset($leadPayload['custom_fields_values']) && is_array($leadPayload['custom_fields_values'])) {
+        $fieldBlocks[] = $leadPayload['custom_fields_values'];
+    }
+
+    foreach ($fieldBlocks as $fields) {
+        foreach ($fields as $field) {
+            $fieldId = $field['id'] ?? $field['field_id'] ?? null;
+            if ($fieldId === null) {
+                continue;
+            }
+
+            if (in_array((int)$fieldId, $realtyFieldIds, true)) {
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
 // Проверяем возможность записи в лог
 if (!is_writable(dirname($logFile))) {
     error_log("[" . date('Y-m-d H:i:s') . "] Cannot write to log directory: " . dirname($logFile));
@@ -79,10 +123,40 @@ $amoCRM->setToken($token);
 // Инициализируем RealtyCalendar с токеном для него (используем нужный для заголовка X-User-Token)
 $rc = new RealtyCalendar("vbeHdes1arkNpb5cn9kw"); // замените на ваш токен для RealtyCalendar
 
-$leadsArray = isset($postData['leads']['status']) ? $postData['leads']['status'] : $postData['leads']['add'];
+$leadsArray = [];
+if (isset($postData['leads']) && is_array($postData['leads'])) {
+    foreach (['add', 'update', 'status'] as $eventType) {
+        if (isset($postData['leads'][$eventType]) && is_array($postData['leads'][$eventType])) {
+            foreach ($postData['leads'][$eventType] as $leadPayload) {
+                if (!is_array($leadPayload)) {
+                    continue;
+                }
+                $leadPayload['_event_type'] = $eventType;
+                $leadsArray[] = $leadPayload;
+            }
+        }
+    }
+}
+
+if (empty($leadsArray)) {
+    safeLog($logFile, "[" . date('Y-m-d H:i:s') . "] Нет сделок для обработки в webhook payload.\n");
+    ob_clean();
+    header('Content-Type: application/json; charset=utf-8');
+    echo json_encode(['status' => 'skipped', 'message' => 'Нет сделок для обработки'], JSON_UNESCAPED_UNICODE);
+    exit;
+}
 
 foreach ($leadsArray as $leadStatus) {
     $leadId = (int)$leadStatus['id'];
+    $eventType = $leadStatus['_event_type'] ?? 'unknown';
+
+    if ($eventType === 'status' && !hasRealtyFieldChanges($leadStatus, $REALTY_FIELD_IDS)) {
+        safeLog(
+            $logFile,
+            "[" . date('Y-m-d H:i:s') . "] SKIP: Сделка $leadId пришла только со сменой статуса, поля Realty не менялись.\n"
+        );
+        continue;
+    }
     
     // Получаем данные сделки из amoCRM
     $leadData = $amoCRM->getLeadById($leadId);
